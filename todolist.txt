@@ -1,0 +1,108 @@
+import threading
+import datetime
+import time
+import os
+
+# Global task list
+tasks = []
+
+# Function to add a new task
+def add_task():
+    task_name = input("Enter task name: ").strip()
+    if not task_name:
+        print(" Task name cannot be empty!")
+        return
+    priority = input("Enter priority (High/Medium/Low): ").strip().capitalize()
+    due_time = input("Enter due time (HH:MM, 24-hour format, optional): ").strip()
+
+    task = {
+        "task": task_name,
+        "priority": priority if priority in ["High","Medium","Low"] else "Medium",
+        "due_time": due_time,
+        "completed": False
+    }
+    tasks.append(task)
+    print(f"Task '{task_name}' added.\n")
+
+# Function to view tasks
+def view_tasks():
+    if not tasks:
+        print(" No tasks available.\n")
+        return
+    print("\n To-Do List:")
+    print("-" * 50)
+    for i, t in enumerate(tasks, 1):
+        status = "Done" if t["completed"] else "Pending"
+        print(f"{i}. {t['task']} | Priority: {t['priority']} | Due: {t['due_time']} | Status: {status}")
+    print("-" * 50 + "\n")
+
+# Function to mark task completed
+def complete_task():
+    view_tasks()
+    try:
+        index = int(input("Enter task number to mark complete: ")) - 1
+        if 0 <= index < len(tasks):
+            tasks[index]["completed"] = True
+            print(f"Task '{tasks[index]['task']}' marked completed.\n")
+        else:
+            print(" Invalid task number.\n")
+    except ValueError:
+        print(" Enter a valid number.\n")
+
+# Function to save tasks
+def save_tasks():
+    filename = "todo_list.txt"
+    with open(filename, "w") as f:
+        f.write("=== TO-DO LIST ===\n\n")
+        for t in tasks:
+            status = "Done" if t["completed"] else "Pending"
+            f.write(f"{t['task']} | Priority: {t['priority']} | Due: {t['due_time']} | Status: {status}\n")
+    print(f" Tasks saved to '{filename}'.\n")
+
+# Function to check reminders in background
+def reminder():
+    while True:
+        now = datetime.datetime.now().strftime("%H:%M")
+        for t in tasks:
+            if t["due_time"] == now and not t["completed"]:
+                print(f"\n Reminder! Task '{t['task']}' is due now!\n")
+                try:
+                    if os.name == 'nt':
+                        import winsound
+                        winsound.Beep(1000, 1000)  # 1 second beep
+                except:
+                    pass
+        time.sleep(30)  # check every 30 seconds
+
+# Start reminder thread
+threading.Thread(target=reminder, daemon=True).start()
+
+# Main menu loop
+def main():
+    while True:
+        print("========== TO-DO LIST APP ==========")
+        print("1. Add Task")
+        print("2. View Tasks")
+        print("3. Complete Task")
+        print("4. Save To File")
+        print("5. Exit")
+        print("====================================")
+        choice = input("Enter your choice: ").strip()
+
+        if choice == "1":
+            add_task()
+        elif choice == "2":
+            view_tasks()
+        elif choice == "3":
+            complete_task()
+        elif choice == "4":
+            save_tasks()
+        elif choice == "5":
+            print("Exiting... Saving tasks.")
+            save_tasks()
+            break
+        else:
+            print("Invalid choice. Try again.\n")
+
+if __name__ == "__main__":
+    main()
